@@ -17,7 +17,7 @@ This script reads a cloudformation template and applies it to the given AWS regi
 
 The scripts name is create_stack.py. Running `create_stack.py -h` will reveal the script help. 
 
-usage: create_stack.py [-h] -t TEMPLATE -n NAME -r REGION [-p PARAMS]
+`usage: create_stack.py [-h] -t TEMPLATE -n NAME -r REGION [-p PARAMS]
                        [-u UPDATE]
  
 optional arguments:
@@ -31,7 +31,7 @@ optional arguments:
                         the key value pairs for the parameters of the stack
   -u UPDATE, --update UPDATE
                         use this argument only if the stack requires updates
-                        
+`                        
                         
 The script takes 4 arguments:
 
