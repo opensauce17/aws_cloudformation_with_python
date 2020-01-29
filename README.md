@@ -20,8 +20,25 @@ aws_secret_access_key = ACCESS_KEY_HERE`
 
 The scripts name is create_stack.py. Running `create_stack.py -h` will reveal the script help. 
 
+```
+usage: create_stack.py [-h] -t TEMPLATE -n NAME -r REGION [-p PARAMS]
+                       [-u UPDATE]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t TEMPLATE, --template TEMPLATE
+                        location of the template file
+  -n NAME, --name NAME  name of the stack
+  -r REGION, --region REGION
+                        the aws region
+  -p PARAMS, --params PARAMS
+                        the key value pairs for the parameters of the stack
+  -u UPDATE, --update UPDATE
+                        use this argument only if the stack requires updates
+```
                         
-<a href="#"><img src="https://i.ibb.co/4mbLdYd/aws-cf-help2.png" alt="aws-cf-help2" border="0" /></a>
+<!--<a href="#"><img src="https://i.ibb.co/4mbLdYd/aws-cf-help2.png" alt="aws-cf-help2" border="0" /></a> -->
+
 
 The script takes 4 arguments:
 
