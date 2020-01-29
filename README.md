@@ -20,7 +20,7 @@ The scripts name is create_stack.py. Running `create_stack.py -h` will reveal th
 `usage: create_stack.py [-h] -t TEMPLATE -n NAME -r REGION [-p PARAMS]
                        [-u UPDATE]`
  
-`optional arguments: <br>
+`optional arguments:` 
   -h, --help            show this help message and exit
   -t TEMPLATE, --template TEMPLATE
                         location of the template file
@@ -30,7 +30,7 @@ The scripts name is create_stack.py. Running `create_stack.py -h` will reveal th
   -p PARAMS, --params PARAMS
                         the key value pairs for the parameters of the stack
   -u UPDATE, --update UPDATE
-                        use this argument only if the stack requires updates`                        
+                        use this argument only if the stack requires updates 
                         
 The script takes 4 arguments:
 
