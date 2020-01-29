@@ -17,8 +17,7 @@ This script reads a cloudformation template and applies it to the given AWS regi
 
 The scripts name is create_stack.py. Running `create_stack.py -h` will reveal the script help. 
 
-![alt text](https://ibb.co/wRkR678)
-
+<a href="https://ibb.co/wRkR678"><img src="https://i.ibb.co/1LgL2MB/aws-cf-help.png" alt="aws-cf-help" border="0" /></a>
                         
 The script takes 4 arguments:
 
