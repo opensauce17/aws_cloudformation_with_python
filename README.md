@@ -1,7 +1,7 @@
-# Development Notes
+# Cloudformation with Python 
 
-This README will document the code for creating and updating the WPF4 stack on AWS.
-DO NOT commit to the master, production or the develop branch. When developing, please create a branch from the develop branch and create a pull request.
+This script reads a cloudformation template and applies it to the given AWS region. 
+
 
 #### Requirements
 
@@ -45,6 +45,6 @@ The PARAMS argument is optional since defaults can be configured in the template
 
 -p "Keyname=keyvalue&Keyname=keyvalue"
 eg.
--p "DBUser=wp_db_master&DBPassword=Lud1v1ct0r"
+-p "DBUser=wp_db_master&DBPassword=S0m3Pa33W0rd"
 
 The UPDATE argument is optional and when invoked takes any one of these: True, T or t
