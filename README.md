@@ -5,7 +5,10 @@ This script reads a cloudformation template and applies it to the given AWS regi
 
 #### Requirements
 
-1. AWS credentials configured in user home directory
+1. AWS credentials configured in user home directory as ~/.aws/credentials with format: 
+`[default]
+aws_access_key_id = KEY_ID_HERE
+aws_secret_access_key = ACCESS_KEY_HERE`
 2. Python 3
 3. The following python libraries : 
 	1. boto3
