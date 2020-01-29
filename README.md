@@ -54,7 +54,7 @@ The PARAMS argument is optional since defaults can be configured in the template
 ```
 -p "Keyname=keyvalue&Keyname=keyvalue"
 eg.
--p "DBUser=wp_db_master&DBPassword=S0m3Pa33W0rd"
+-p "DBUser=db_master&DBPassword=S0m3Pa33W0rd"
 ```
 
 The UPDATE argument is optional and when invoked takes any one of these: True, T or t
