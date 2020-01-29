@@ -40,21 +40,21 @@ optional arguments:
                         use this argument only if the stack requires updates
 ```
                         
-<!--<a href="#"><img src="https://i.ibb.co/4mbLdYd/aws-cf-help2.png" alt="aws-cf-help2" border="0" /></a> -->
-
 
 The script takes 4 arguments:
-
+```
 TEMPLATE
 NAME
 REGION
 PARAMS
 UPDATE
-
+```
 The PARAMS argument is optional since defaults can be configured in the template. When including the params option in the script execution use the following format: 
 
+```
 -p "Keyname=keyvalue&Keyname=keyvalue"
 eg.
 -p "DBUser=wp_db_master&DBPassword=S0m3Pa33W0rd"
+```
 
 The UPDATE argument is optional and when invoked takes any one of these: True, T or t
