@@ -20,7 +20,7 @@ The scripts name is create_stack.py. Running `create_stack.py -h` will reveal th
 `usage: create_stack.py [-h] -t TEMPLATE -n NAME -r REGION [-p PARAMS]
                        [-u UPDATE]`
  
-`optional arguments:
+`optional arguments: <br>
   -h, --help            show this help message and exit
   -t TEMPLATE, --template TEMPLATE
                         location of the template file
