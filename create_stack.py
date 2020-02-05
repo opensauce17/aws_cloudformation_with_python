@@ -26,24 +26,46 @@ BANNER = r'''
                                                                                                                  
 '''
 
+# construct the argument parse and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-t", "--template", required=True,
+                help="location of the template file")
+ap.add_argument("-n", "--name", required=True,
+                help="name of the stack")
+ap.add_argument("-r", "--region", required=True,
+                help="the aws region")
+ap.add_argument("-p", "--params", type=str, required=False, action='append',
+                help='the key value pairs for the parameters of the stack')
+ap.add_argument("-u", "--update", type=str, required=False,
+                help='use this argument only if the stack requires updates')
+args = vars(ap.parse_args())
+
+# open the template file and load it into a dictionary
+with open(args["template"]) as template_file:
+    data = json.load(template_file)
+
+# initiate a json object to be loaded to the api
+content = json.dumps(data)
 
 # FUNCTIONS
 def make_kv_from_args(params_as_querystring, name_prefix="", use_previous=None):
 
-    nvs = parse_qs(params_as_querystring)
+    d = []
+    for i in params_as_querystring:
 
-    kv_pairs = []
-    for key in nvs:
-        kv = {
-            "{0}Key".format(name_prefix):key,
-            "{0}Value".format(name_prefix):nvs[key][0],
-        }
-        if use_previous != None:
-            kv['UsePreviousValue'] = use_previous
+        nvs = parse_qs(i)
 
-        kv_pairs.append(kv)
+        for key in nvs:
+            kv = {
+                "{0}Key".format(name_prefix):key,
+                "{0}Value".format(name_prefix):nvs[key][0],
+            }
+            if use_previous != None:
+                kv['UsePreviousValue'] = use_previous
 
-    return kv_pairs
+            d.append(kv)
+
+    return d
 
 def date_diff_in_Seconds(dt2, dt1):
     timedelta = dt2 - dt1
@@ -97,108 +119,97 @@ def stream_events(cf, stack_name):
                     exit()
 # END FUNCTIONS
 
-# construct the argument parse and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-t", "--template", required=True,
-                help="location of the template file")
-ap.add_argument("-n", "--name", required=True,
-                help="name of the stack")
-ap.add_argument("-r", "--region", required=True,
-                help="the aws region")
-ap.add_argument("-p", "--params", type=str, required=False,
-                help='the key value pairs for the parameters of the stack')
-ap.add_argument("-u", "--update", type=str, required=False,
-                help='use this argument only if the stack requires updates')
-args = vars(ap.parse_args())
 
-# open the template file and load it into a dictionary
-with open(args["template"]) as template_file:
-    data = json.load(template_file)
+def main():
 
-# initiate a json object to be loaded to the api
-content = json.dumps(data)
-
-# Display Template Information
-print(BANNER)
-print('\n')
-print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'Template Description: ' + data['Description'])
-print('\n')
-if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
-    print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'The following resources will be updated:')
+    # Display Template Information
+    print(BANNER)
     print('\n')
-else:
-    print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'The following resources will be created:')
+    print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'Template Description: ' + data['Description'])
     print('\n')
+    if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
+        print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'The following resources will be updated:')
+        print('\n')
+    else:
+        print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'The following resources will be created:')
+        print('\n')
 
-resources = data['Resources']
+    resources = data['Resources']
 
-resource_type = []
-for key, val in resources.items():
-    value = val
-    v = value['Type']
-    resource_type.append(v)
+    resource_type = []
+    for key, val in resources.items():
+        value = val
+        v = value['Type']
+        resource_type.append(v)
 
-# Calculate amount of resources per resource
-result = dict((i, resource_type.count(i)) for i in resource_type)
+    # Calculate amount of resources per resource
+    result = dict((i, resource_type.count(i)) for i in resource_type)
 
-print('------------------------------------------------------')
-print("| {:<7}|    {:<15}".format('Count','Resource Type'))
-print('------------------------------------------------------')
-
-for k, v in result.items():
-    print("| {:<7}|    {:<15}".format(v, k))
     print('------------------------------------------------------')
-    
-print('\n')
+    print("| {:<7}|    {:<15}".format('Count','Resource Type'))
+    print('------------------------------------------------------')
 
-if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
-    answer = input(bcolors.WARNING + '[ WARNING ] ' + bcolors.ENDC + 'Continue with Stack Update? yes/no: ')
-else:
-    answer = input(bcolors.WARNING + '[ WARNING ] ' + bcolors.ENDC + 'Continue with Stack Creation? yes/no: ')
+    for k, v in result.items():
+        print("| {:<7}|    {:<15}".format(v, k))
+        print('------------------------------------------------------')
 
-if answer == "yes" or answer == 'y':
-
-
-    cf = boto3.client('cloudformation', region_name=args["region"])
-    params = make_kv_from_args(args["params"], "Parameter", False)
+    print('\n')
 
     if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
-
-        print('\n')
-        print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'Updating Stack {}'.format(args["name"]) + ' in the '
-              + args["region"] + ' region' )
-        print('\n')
-
+        answer = input(bcolors.WARNING + '[ WARNING ] ' + bcolors.ENDC + 'Continue with Stack Update? yes/no: ')
     else:
+        answer = input(bcolors.WARNING + '[ WARNING ] ' + bcolors.ENDC + 'Continue with Stack Creation? yes/no: ')
 
+    if answer == "yes" or answer == 'y':
+
+
+        cf = boto3.client('cloudformation', region_name=args["region"])
+        #print(args["params"])
+        #exit()
+        params = make_kv_from_args(args["params"], "Parameter", False)
+
+
+        if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
+
+            print('\n')
+            print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'Updating Stack {}'.format(args["name"]) + ' in the '
+                  + args["region"] + ' region' )
+            print('\n')
+
+        else:
+
+            print('\n')
+            print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'Creating Stack {}'.format(args["name"]) + ' in the ' +
+                  args["region"] + ' region')
+            print('\n')
+
+
+        if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
+
+            # make the api call to update the stack
+            stack = cf.update_stack(
+                StackName=args["name"],
+                TemplateBody=content,
+                Parameters=params,
+                Capabilities=['CAPABILITY_IAM']
+            )
+            stream_events(cf, args["name"])
+        else:
+            # make the api call to create the stack
+            stack = cf.create_stack(
+                StackName=args["name"],
+                TemplateBody=content,
+                Parameters=params,
+                Capabilities=['CAPABILITY_IAM']
+            )
+            stream_events(cf, args["name"])
+
+    elif answer == "no" or answer == 'n':
         print('\n')
-        print(bcolors.INFOBLUE + '[ INFO ] ' + bcolors.ENDC + 'Creating Stack {}'.format(args["name"]) + ' in the ' +
-              args["region"] + ' region')
+        print(bcolors.FAIL + '[ CANCELLED ]' + bcolors.ENDC +  ' Creation of Cloudformation Stack ' + args["name"]
+              + ' Cancelled ')
         print('\n')
 
+if __name__ == '__main__':
+    main()
 
-    if args["update"] == "True" or args["update"] == "t" or args["update"] == "T":
-
-        # make the api call to update the stack
-        stack = cf.update_stack(
-            StackName=args["name"],
-            TemplateBody=content,
-            Parameters=params,
-            Capabilities=['CAPABILITY_IAM']
-        )
-        stream_events(cf, args["name"])
-    else:
-        # make the api call to create the stack
-        stack = cf.create_stack(
-            StackName=args["name"],
-            TemplateBody=content,
-            Parameters=params,
-            Capabilities=['CAPABILITY_IAM']
-        )
-        stream_events(cf, args["name"])
-
-elif answer == "no" or answer == 'n':
-    print('\n')
-    print(bcolors.FAIL + '[ CANCELLED ]' + bcolors.ENDC +  ' Creation of Cloudformation Stack ' + args["name"]
-          + ' Cancelled ')
-    print('\n')
