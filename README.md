@@ -52,9 +52,9 @@ UPDATE
 The PARAMS argument is optional since defaults can be configured in the template. When including the params option in the script execution use the following format: 
 
 ```
--p "Keyname=keyvalue&Keyname=keyvalue"
+-p "Keyname=keyvalue&Keyname=keyvalue&Keyname=keyvalue"
 eg.
--p "DBUser=db_master&DBPassword=S0m3Pa33W0rd"
+-p ""InstanceType=t2.micro&KeyName=ec2_keypair&ImageID=ami-04763b3055de4860b&SSHLocation=165.0.98.114/32"
 ```
 
 The UPDATE argument is optional and when invoked takes any one of these: True, T or t
