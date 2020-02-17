@@ -1,7 +1,6 @@
 # Cloudformation with Python 
 
-This script reads a cloudformation template and applies it to the given AWS region. 
-
+This script reads a cloudformation template and applies it to the given AWS region. For more information checkout my blog [here](https://theworldoftheweb.net/post/3)
 
 #### Requirements
 
@@ -54,7 +53,7 @@ The PARAMS argument is optional since defaults can be configured in the template
 ```
 -p "Keyname=keyvalue&Keyname=keyvalue&Keyname=keyvalue"
 eg.
--p "InstanceType=t2.micro&KeyName=ec2_keypair&ImageID=ami-04763b3055de4860b&SSHLocation=165.0.98.114/32"
+-p "KeyName=ec2_keypair&ImageID=ami-04763b3055de4860b&SSHLocation=165.0.98.114/32"
 ```
 
 The UPDATE argument is optional and when invoked takes any one of these: True, T or t
