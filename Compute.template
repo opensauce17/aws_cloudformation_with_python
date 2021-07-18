@@ -1,0 +1,81 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description" : "Compute Stack",
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "84b197ee-a473-4de0-a5a9-33dfe27fb128": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 480,
+                    "y": 130
+                },
+                "z": 0
+            }
+        }
+    },
+    "Parameters": {
+        "VPCStackName":{
+            "Type":"String",
+            "Description": "The name of the related VPC Stack"
+        },
+        "SSMRoleName": {
+            "Type":"String",
+            "Description": "The name of the SSM role for the instances"
+        }
+    },
+    "Resources": {
+         "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "InstanceProfileName": "SSM-Instance-Profile",
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Fn::Sub": "${SSMRoleName}"
+                    }
+                ]
+            }
+        },
+        "WebServer1": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "Tags" : [{
+                    "Key": "Name",
+                    "Value": "WebServer1"
+                }],
+                "InstanceType": "t2.micro",
+                "ImageId": "ami-058b1b7fe545997ae",
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": [
+                            {
+                                "Fn::ImportValue": {
+                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                                }
+                            }
+                        ],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                            }
+                        }
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "84b197ee-a473-4de0-a5a9-33dfe27fb128"
+                }
+            }
+        }
+    }
+}

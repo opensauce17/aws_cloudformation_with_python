@@ -200,7 +200,7 @@ def main():
                 StackName=args["name"],
                 TemplateBody=content,
                 Parameters=params,
-                Capabilities=['CAPABILITY_IAM']
+                Capabilities=['CAPABILITY_NAMED_IAM']
             )
             stream_events(cf, args["name"])
 
