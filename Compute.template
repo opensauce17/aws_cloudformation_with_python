@@ -70,12 +70,8 @@
                         }
                     }
                 ]
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "84b197ee-a473-4de0-a5a9-33dfe27fb128"
-                }
             }
         }
+
     }
 }
