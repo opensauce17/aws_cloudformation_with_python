@@ -253,10 +253,10 @@
                 "Protocol":"HTTP"
               }
             },
-        "AppTg":{  
+        "LbTg":{  
             "Type":"AWS::ElasticLoadBalancingV2::TargetGroup",
             "Properties":{  
-                "Name":"AppTg",
+                "Name":"LbTg",
                 "Port":80,
                 "Protocol":"HTTP",
                 "TargetGroupAttributes":[  
