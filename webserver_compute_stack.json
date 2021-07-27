@@ -197,7 +197,7 @@
             }
         },
         "AppLb": {
-            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Type":"AWS::ElasticLoadBalancingV2::LoadBalancer",
             "Properties": {
                 "Scheme":"internet-facing",
                 "Subnets":[
