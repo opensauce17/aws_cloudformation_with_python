@@ -1,26 +1,12 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Compute Stack",
-    "Mappings": {
-        "AmazonHVMRegionMap": {
-            "eu-west-1": {"HVM64": "ami-058b1b7fe545997ae"},
-            "eu-central-1": {"HVM64": "ami-00f22f6155d6d92c5"}
-        }
-    },
+    "Description": "WebServer Network Stack",
     "Parameters": {
         "EnvironmentName": {
             "Type": "String",
-            "Description": "The identifier of the environment (dev or prod) for naming resource tags",
+            "Description": "The identifier of the environment for naming resource tags. Ex: Development/Production",
             "MinLength": 3,
             "MaxLength": 48
-        },
-        "VPCStackName": {
-            "Type": "String",
-            "Description": "The name of the related VPC Stack"
-        },
-        "RoleName": {
-            "Type": "String",
-            "Description": "The name of the role assigned to the EC2 instance for Session Manager and Cloudwatch access"
         },
         "AvailabilityZoneA":{
             "Description":"The A availability zone where the resources will be deployed",
@@ -31,395 +17,460 @@
             "Description":"The B availability zones where the resources will be deployed",
             "Type":"AWS::EC2::AvailabilityZone::Name",
             "ConstraintDescription":"Must be a valid availability zones. Ex: eu-west-1a"
-        },
-        "WebServer1HostName": {
-            "Type": "String",
-            "Description": "The hostname identifier of the First Web Server"
-        },
-        "WebServer2HostName": {
-            "Type": "String",
-            "Description": "The hostname identifier of the Second Web Server"
-        },
-        "AMI": {
-            "Description": "AMI to use.",
-            "AllowedPattern": "(ami-[0-9a-f]{8}){0,1}",
-            "Default": "",
-            "Type": "String"
-        }
-    },
-    "Conditions": {
-        "UseDefaultAMI": {
-            "Fn::Equals": [
-                {"Ref": "AMI"},
-                ""
-            ]
         }
     },
     "Resources": {
-        "InstanceProfile": {
-            "Type": "AWS::IAM::InstanceProfile",
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
             "Properties": {
-                "InstanceProfileName": "SSM-Instance-Profile",
-                "Path": "/",
-                "Roles": [
-                    {
-                        "Fn::Sub": "${RoleName}"
-                    }
-                ]
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "5b767018-2f81-48a4-939a-9892b4de5f9a"
-                }
-            }
-        },
-        "WebServer1": {
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "AvailabilityZone":{
-                   "Ref":"AvailabilityZoneA"
-                },
-                "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
-                },
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
+                "CidrBlock": "10.0.0.0/16",
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Sub": "${EnvironmentName}-Webserver1"
+                            "Fn::Sub": "${EnvironmentName}-VPC"
                         }
                     }
-                ],
-                "InstanceType": "t2.micro",
-                "ImageId": {
-                    "Fn::If": [
-                        "UseDefaultAMI",
-                        {"Fn::FindInMap": [
-                                "AWSRegionArch2AMI",
-                                {"Ref": "AWS::Region"},
-                                "HVM64"
-                        ]},
-                        {"Ref": "AMI"}
-                    ]
-                },
-                "NetworkInterfaces": [
-                    {
-                        "GroupSet": [
-                            {
-                                "Fn::ImportValue": {
-                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
-                                }
-                            }
-                        ],
-                        "AssociatePublicIpAddress": "true",
-                        "DeviceIndex": "0",
-                        "DeleteOnTermination": "true",
-                        "SubnetId": {
-                            "Fn::ImportValue": {
-                                "Fn::Sub": "${VPCStackName}-PUBSUBA"
-                            }
-                        }
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "#!/bin/bash -xe\n",
-                                {
-                                    "Fn::Sub": "sudo hostnamectl set-hostname ${WebServer1HostName}\n"
-                                },
-                                "sudo yum update -y\n",
-                                "sudo yum install -y awslogs httpd\n",
-                                "sudo systemctl start httpd\n",
-                                "sudo chkconfig httpd on\n",
-                                "sudo systemctl enable httpd\n",
-                                {
-                                    "Fn::Sub": "echo Hello World from ${WebServer1HostName} > /var/www/html/index.html\n"
-                                },
-                                "# Add apache logs to cloudwatch\n",
-                                "cat << 'EOF' >> /etc/awslogs/awslogs.conf\n\n",
-                                "[apache logs]\n",
-                                "datetime_format = %b %d %H:%M:%S\n",
-                                "file = /var/log/httpd/access_log\n",
-                                "buffer_duration = 5000\n",
-                                {
-                                    "Fn::Sub": "log_stream_name = ${WebServer1HostName}\n"
-                                },
-                                "initial_position = start_of_file\n",
-                                "log_group_name = apaches_logs\n",
-                                "EOF\n",
-                                "sudo systemctl start awslogsd\n",
-                                "sudo chkconfig awslogsd on\n",
-                                "sudo systemctl enable awslogsd.service\n",
-                                "sudo curl localhost\n"
-                            ]
-                        ]
-                    }
-                }
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "7b2052b9-a661-422c-ada4-7d4941793e4d"
-                }
+                ]
             }
         },
-        "WebServer2": {
-            "Type": "AWS::EC2::Instance",
+        "PubSubneta": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone":{  
+                   "Ref":"AvailabilityZoneA"
+                },    
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": "10.0.1.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PubSubneta"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubSubnetb": {
+            "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone":{
                    "Ref":"AvailabilityZoneB"
+                },     
+                "VpcId": {
+                    "Ref": "VPC"
                 },
-                "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
-                },
+                "CidrBlock": "10.0.2.0/24",
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Sub": "${EnvironmentName}-Webserver2"
-                        }
-                    }
-                ],
-                "InstanceType": "t2.micro",
-                "ImageId": {
-                    "Fn::If": [
-                        "UseDefaultAMI",
-                        {"Fn::FindInMap": [
-                                "AWSRegionArch2AMI",
-                                {"Ref": "AWS::Region"},
-                                "HVM64"
-                        ]},
-                        {"Ref": "AMI"}
-                    ]
-                },
-                "NetworkInterfaces": [
-                    {
-                        "GroupSet": [
-                            {
-                                "Fn::ImportValue": {
-                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
-                                }
-                            }
-                        ],
-                        "AssociatePublicIpAddress": "true",
-                        "DeviceIndex": "0",
-                        "DeleteOnTermination": "true",
-                        "SubnetId": {
-                            "Fn::ImportValue": {
-                                "Fn::Sub": "${VPCStackName}-PUBSUBB"
-                            }
-                        }
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "#!/bin/bash -xe\n",
-                                {
-                                    "Fn::Sub": "sudo hostnamectl set-hostname ${WebServer2HostName}\n"
-                                },
-                                "sudo yum update -y\n",
-                                "sudo yum install -y awslogs httpd\n",
-                                "sudo systemctl start httpd\n",
-                                "sudo chkconfig httpd on\n",
-                                "sudo systemctl enable httpd\n",
-                                {
-                                    "Fn::Sub": "echo Hello World from ${WebServer2HostName} > /var/www/html/index.html\n"
-                                },
-                                "# Add apache logs to cloudwatch\n",
-                                "cat << 'EOF' >> /etc/awslogs/awslogs.conf\n\n",
-                                "[apache logs]\n",
-                                "datetime_format = %b %d %H:%M:%S\n",
-                                "file = /var/log/httpd/access_log\n",
-                                "buffer_duration = 5000\n",
-                                {
-                                    "Fn::Sub": "log_stream_name = ${WebServer2HostName}\n"
-                                },
-                                "initial_position = start_of_file\n",
-                                "log_group_name = apaches_logs\n",
-                                "EOF\n",
-                                "sudo systemctl start awslogsd\n",
-                                "sudo chkconfig awslogsd on\n",
-                                "sudo systemctl enable awslogsd.service\n",
-                                "sudo curl localhost\n"
-                            ]
-                        ]
-                    }
-                }
-            }
-        },
-        "AppLb": {
-            "Type":"AWS::ElasticLoadBalancingV2::LoadBalancer",
-            "Properties": {
-                "Scheme":"internet-facing",
-                "Subnets":[
-                   {
-                        "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-PUBSUBA"
-                         }
-                   },
-                   {
-                        "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-PUBSUBB"
-                        }
-                   }
-                ],
-                "SecurityGroups":[
-                    {
-                         "Fn::ImportValue": {
-                         "Fn::Sub": "${VPCStackName}-WEBTIERSG"
-                        }
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Sub": "${EnvironmentName}-ALB"
+                            "Fn::Sub": "${EnvironmentName}-PubSubnetb"
                         }
                     }
                 ]
             }
         },
-        "HTTP80Listener":{  
-            "Type":"AWS::ElasticLoadBalancingV2::Listener",
-            "Properties":{
-                "DefaultActions":[
-                  {
-                    "Type":"forward",
-                    "TargetGroupArn":{
-                      "Ref":"LbTg"
-                    }
-                  }
-                ],
-                "LoadBalancerArn":{
-                  "Ref":"AppLb"
+        "PrivSubneta": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneA"
+                },    
+                "VpcId": {
+                    "Ref": "VPC"
                 },
-                "Port":"80",
-                "Protocol":"HTTP"
-              }
-            },
-       "ListenerRule":{  
-            "Type":"AWS::ElasticLoadBalancingV2::ListenerRule",
-            "Properties":{  
-                "Actions":[  
-                {  
-                    "Type":"forward",
-                    "TargetGroupArn":{  
-                    "Ref":"LbTg"
+                "CidrBlock": "10.0.100.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivSubneta"
+                        }
                     }
-                }
-            ],
-            "Conditions":[  
-                {  
-                    "Field":"path-pattern",
-                    "Values":[  
-                    "*"
-                    ]
-                }
-            ],
-        "ListenerArn":{  
-          "Ref":"HTTP80Listener"
+                ]
+            }
         },
-        "Priority":1
-      }
-    },    
-        "LbTg":{  
-            "Type":"AWS::ElasticLoadBalancingV2::TargetGroup",
-            "Properties":{  
-                "Name":"LbTg",
-                "Port":80,
-                "Protocol":"HTTP",
-                "TargetGroupAttributes":[  
-                {  
-                    "Key":"deregistration_delay.timeout_seconds",
-                    "Value":"20"
+        "PrivSubnetb": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneB"
+                },    
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": "10.0.101.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivSubnetb"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubRouteTable1": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PubRouteTable1"
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivateRouteTable1": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivateRouteTable1"
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivateRouteTable2": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivateRouteTable2"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubAssocA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PubRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "PubSubneta"
                 }
+            }
+        },
+        "PubAssocB": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PubRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "PubSubnetb"
+                }
+            }
+        },
+        "PrivAssocA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "PrivSubneta"
+                }
+            }
+        },
+        "PrivAssocB": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "SubnetId": {
+                    "Ref": "PrivSubnetb"
+                }
+            }
+        },
+        "IGW": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-IGW"
+                        }
+                    }
+                ]
+            }
+        },
+        "IGWAttach": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "IGW"
+                }
+            }
+        },
+        "PubRoute1": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PubRouteTable1"
+                },
+                "GatewayId": {
+                    "Ref": "IGW"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0"
+            }
+        },
+        "PrivRoute1": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGWa"
+                }
+            }
+        },
+        "PrivRoute2": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGWb"
+                }
+            }
+        },
+        "NatGWa": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PubSubneta"
+                },
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "EIP1",
+                        "AllocationId"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-NatGW-a"
+                        }
+                    }
+                ]
+            }
+        },
+        "NatGWb": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PubSubnetb"
+                },
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "EIP2",
+                        "AllocationId"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-NatGW-b"
+                        }
+                    }
+                ]
+            }
+        },
+        "EIP1": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-EIP-a"
+                        }
+                    }
+                ]
+            }
+        },
+        "EIP2": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-EIP-b"
+                        }
+                    }
+                ]
+            }
+        },
+        "WebTierSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow http from anywhere",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-WebTier"
+                        }
+                    }
                 ],
                 "VpcId": {
-                        "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-VPCID"
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
                     }
-                },
-                "Targets":[  
-                {  
-                    "Id":{  
-                    "Ref":"WebServer1"
-                    },
-                    "Port":80
-                },
-                {  
-                    "Id":{  
-                    "Ref":"WebServer2"
-                    },
-                    "Port":80
-                }
-                ],
+                ]
+            }
+        },
+        "BackEndTierSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow mysql from WebTier",
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Sub": "${EnvironmentName}-WebTg"
+                            "Fn::Sub": "${EnvironmentName}-BackendTier"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Fn::GetAtt": [
+                                "WebTierSG",
+                                "GroupId"
+                            ]
                         }
                     }
                 ]
             }
-        }   
-    },
-    "Outputs": {
-        "WEBSERVER1": {
-            "Description": "The ID of Webserver 1",
-            "Value": {
-                "Ref": "WebServer1"
-            },
-            "Export": {
-                "Name": {
-                    "Fn::Sub": "${AWS::StackName}-WEBSERVER1"
-                }
-            }
-        },
-        "WEBSERVER2": {
-            "Description": "The ID of Webserver 2",
-            "Value": {
-                "Ref": "WebServer2"
-            },
-            "Export": {
-                "Name": {
-                    "Fn::Sub": "${AWS::StackName}-WEBSERVER2"
-                }
-            }
-        },
-        "WEB1PUBLICIP":{
-            "Description":"PublicIp of WebServer1",
-            "Value":{  
-                "Fn::GetAtt":[  
-                "WebServer1",
-                "PublicIp"
-            ]
         }
     },
-        "WEB2PUBLICIP":{
-            "Description":"PublicIp of WebServer2",    
-            "Value":{  
-                "Fn::GetAtt":[  
-                "WebServer2",
-                "PublicIp"
-            ]
+        "Outputs": {
+            "VPCID": {
+                "Description": "The ID of the VPC",
+                "Value": {
+                    "Ref": "VPC"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-VPCID"
+                    }
+                }
+            },
+            "PUBSUBA": {
+                "Description": "The ID of Public Subnet A",
+                "Value": {
+                    "Ref": "PubSubneta"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PUBSUBA"
+                    }
+                }
+            },
+            "PUBSUBB": {
+                "Description": "The ID of Public Subnet B",
+                "Value": {
+                    "Ref": "PubSubnetb"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PUBSUBB"
+                    }
+                }
+            },
+            "PRIVSUBA": {
+                "Description": "The ID of Private Subnet A",
+                "Value": {
+                    "Ref": "PrivSubneta"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PRIVSUBA"
+                    }
+                }
+            },
+            "PRIVSUBB": {
+                "Description": "The ID of Private Subnet B",
+                "Value": {
+                    "Ref": "PrivSubnetb"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PRIVSUBB"
+                    }
+                }
+            },
+            "WEBTIERSG": {
+                "Description": "The ID of WebTier SG",
+                "Value": {
+                    "Ref": "WebTierSG"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-WEBTIERSG"
+                    }
+                }
+            },
+            "BKENDTIER": {
+                "Description": "The ID of Backend Tier SG",
+                "Value": {
+                    "Ref": "BackEndTierSG"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-BKENDTIER"
+                    }
+                }
+            }
         }
-    },
-        "APPLBDNSNAME":{  
-            "Description":"DNSName of the Application Load Balancer",
-            "Value":{  
-                "Fn::GetAtt":[  
-                    "AppLb",
-                    "DNSName"
-        ]
-      }
-    }
-  }
-}
-
+   }

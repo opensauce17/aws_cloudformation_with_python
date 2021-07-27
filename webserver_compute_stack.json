@@ -1,10 +1,16 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Compute Stack",
+    "Description": "Web Server Compute Stack",
+    "Mappings": {
+        "AWSRegionArch2AMI": {
+            "eu-central-1": {"HVM64": "ami-00f22f6155d6d92c5"},
+            "eu-west-1": {"HVM64": "ami-ami-058b1b7fe545997ae"}
+        }
+    },
     "Parameters": {
         "EnvironmentName": {
             "Type": "String",
-            "Description": "The identifier of the environment (dev or prod) for naming resource tags",
+            "Description": "The identifier of the environment for naming resource tags. Ex: Development/Production",
             "MinLength": 3,
             "MaxLength": 48
         },
@@ -33,6 +39,20 @@
         "WebServer2HostName": {
             "Type": "String",
             "Description": "The hostname identifier of the Second Web Server"
+        },
+        "AMI": {
+            "Description": "AMI to use.",
+            "AllowedPattern": "(ami-[0-9a-f]{8}){0,1}",
+            "Default": "",
+            "Type": "String"
+        }
+    },
+     "Conditions": {
+        "UseDefaultAMI": {
+            "Fn::Equals": [
+                {"Ref": "AMI"},
+                ""
+            ]
         }
     },
     "Resources": {
@@ -71,7 +91,17 @@
                     }
                 ],
                 "InstanceType": "t2.micro",
-                "ImageId": "ami-058b1b7fe545997ae",
+                "ImageId": {
+                    "Fn::If": [
+                        "UseDefaultAMI",
+                        {"Fn::FindInMap": [
+                                "AWSRegionArch2AMI",
+                                {"Ref": "AWS::Region"},
+                                "HVM64"
+                        ]},
+                        {"Ref": "AMI"}
+                    ]
+                },
                 "NetworkInterfaces": [
                     {
                         "GroupSet": [
@@ -153,7 +183,17 @@
                     }
                 ],
                 "InstanceType": "t2.micro",
-                "ImageId": "ami-058b1b7fe545997ae",
+                "ImageId": {
+                    "Fn::If": [
+                        "UseDefaultAMI",
+                        {"Fn::FindInMap": [
+                                "AWSRegionArch2AMI",
+                                {"Ref": "AWS::Region"},
+                                "HVM64"
+                        ]},
+                        {"Ref": "AMI"}
+                    ]
+                },
                 "NetworkInterfaces": [
                     {
                         "GroupSet": [
@@ -382,3 +422,4 @@
     }
   }
 }
+
