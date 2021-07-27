@@ -1,0 +1,454 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "WebServer Network Stack",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The identifier of the environment (dev or prod) for naming resource tags",
+            "MinLength": 3,
+            "MaxLength": 48
+        }
+    },
+    "Resources": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
+                "CidrBlock": "10.0.0.0/16",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-VPC"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubSubneta": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": "10.0.1.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PubSubneta"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubSubnetb": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": "10.0.2.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PubSubnetb"
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivSubneta": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": "10.0.100.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivSubneta"
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivSubnetb": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": "10.0.101.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivSubnetb"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubRouteTable1": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PubRouteTable1"
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivateRouteTable1": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivateRouteTable1"
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivateRouteTable2": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-PrivateRouteTable2"
+                        }
+                    }
+                ]
+            }
+        },
+        "PubAssocA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PubRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "PubSubneta"
+                }
+            }
+        },
+        "PubAssocB": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PubRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "PubSubnetb"
+                }
+            }
+        },
+        "PrivAssocA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "PrivSubneta"
+                }
+            }
+        },
+        "PrivAssocB": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "SubnetId": {
+                    "Ref": "PrivSubnetb"
+                }
+            }
+        },
+        "IGW": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-IGW"
+                        }
+                    }
+                ]
+            }
+        },
+        "IGWAttach": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "IGW"
+                }
+            }
+        },
+        "PubRoute1": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PubRouteTable1"
+                },
+                "GatewayId": {
+                    "Ref": "IGW"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0"
+            }
+        },
+        "PrivRoute1": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGWa"
+                }
+            }
+        },
+        "PrivRoute2": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGWb"
+                }
+            }
+        },
+        "NatGWa": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PubSubneta"
+                },
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "EIP1",
+                        "AllocationId"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-NatGW-a"
+                        }
+                    }
+                ]
+            }
+        },
+        "NatGWb": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PubSubnetb"
+                },
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "EIP2",
+                        "AllocationId"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-NatGW-b"
+                        }
+                    }
+                ]
+            }
+        },
+        "EIP1": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-EIP-a"
+                        }
+                    }
+                ]
+            }
+        },
+        "EIP2": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-EIP-b"
+                        }
+                    }
+                ]
+            }
+        },
+        "WebTierSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow http from anywhere",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-WebTier"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "BackEndTierSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow mysql from WebTier",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-BackendTier"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Fn::GetAtt": [
+                                "WebTierSG",
+                                "GroupId"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    },
+        "Outputs": {
+            "VPCID": {
+                "Description": "The ID of the VPC",
+                "Value": {
+                    "Ref": "VPC"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-VPCID"
+                    }
+                }
+            },
+            "PUBSUBA": {
+                "Description": "The ID of Public Subnet A",
+                "Value": {
+                    "Ref": "PubSubneta"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PUBSUBA"
+                    }
+                }
+            },
+            "PUBSUBB": {
+                "Description": "The ID of Public Subnet B",
+                "Value": {
+                    "Ref": "PubSubnetb"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PUBSUBB"
+                    }
+                }
+            },
+            "PRIVSUBA": {
+                "Description": "The ID of Private Subnet A",
+                "Value": {
+                    "Ref": "PrivSubneta"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PRIVSUBA"
+                    }
+                }
+            },
+            "PRIVSUBB": {
+                "Description": "The ID of Private Subnet B",
+                "Value": {
+                    "Ref": "PrivSubnetb"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-PRIVSUBB"
+                    }
+                }
+            },
+            "WEBTIERSG": {
+                "Description": "The ID of WebTier SG",
+                "Value": {
+                    "Ref": "WebTierSG"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-WEBTIERSG"
+                    }
+                }
+            },
+            "BKENDTIER": {
+                "Description": "The ID of Backend Tier SG",
+                "Value": {
+                    "Ref": "BackEndTierSG"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-BKENDTIER"
+                    }
+                }
+            }
+        }
+   }

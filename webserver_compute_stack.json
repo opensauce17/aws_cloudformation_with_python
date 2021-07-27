@@ -1,0 +1,214 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description" : "Compute Stack",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The identifier of the environment (dev or prod) for naming resource tags",
+            "MinLength": 3,
+            "MaxLength": 48
+        },
+        "VPCStackName":{
+            "Type":"String",
+            "Description": "The name of the related VPC Stack"
+        },
+        "RoleName": {
+            "Type":"String",
+            "Description": "The name of the role assigned to the EC2 instance for Session Manager and Cloudwatch access"
+        },
+	    "WebServer1HostName": {
+            "Type": "String",
+            "Description": "The hostname identifier of the First Web Server"
+        },
+        "WebServer2HostName": {
+            "Type": "String",
+            "Description": "The hostname identifier of the Second Web Server"
+        }
+    },
+    "Resources": {
+         "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "InstanceProfileName": "SSM-Instance-Profile",
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Fn::Sub": "${RoleName}"
+                    }
+                ]
+            }
+        },
+     	 "WebServer1": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-Webserver1"
+                        }
+                    }
+                ],
+                "InstanceType": "t2.micro",
+                "ImageId": "ami-058b1b7fe545997ae",
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": [
+			               {
+                                "Fn::ImportValue": {
+                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                                }
+                            }
+                        ],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+			  "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                            }
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                {
+                                    "Fn::Sub": "sudo hostnamectl set-hostname ${WebServer1HostName}\n"
+                                },
+                                "sudo yum update -y\n",
+                                "sudo yum install -y awslogs httpd\n",
+                                "sudo systemctl start httpd\n",
+                                "sudo chkconfig httpd on\n",
+                                "sudo systemctl enable httpd\n",
+                                {
+                                    "Fn::Sub": "echo Hello World from ${WebServer1HostName} > /var/www/html/index.html\n"
+                                },
+                                "# Add apache logs to cloudwatch\n",
+                                "cat << 'EOF' >> /etc/awslogs/awslogs.conf\n\n",
+                                "[apache logs]\n",
+                                "datetime_format = %b %d %H:%M:%S\n",
+                                "file = /var/log/httpd/access_log\n",
+                                "buffer_duration = 5000\n",
+                                {
+                                    "Fn::Sub": "log_stream_name = ${WebServer1HostName}\n"
+                                },
+                                "initial_position = start_of_file\n",
+                                "log_group_name = apaches_logs\n",
+                                "EOF\n",
+                                "sudo systemctl start awslogsd\n",
+                                "sudo chkconfig awslogsd on\n",
+                                "sudo systemctl enable awslogsd.service\n",
+                                "sudo curl localhost\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "WebServer2": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-Webserver2"
+                        }
+                    }
+                ],
+                "InstanceType": "t2.micro",
+                "ImageId": "ami-058b1b7fe545997ae",
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": [
+			                {
+                                "Fn::ImportValue": {
+                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                                }
+                            }
+                        ],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+			   "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCStackName}-PUBSUBB"
+                            }
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                {
+                                    "Fn::Sub": "sudo hostnamectl set-hostname ${WebServer2HostName}\n"
+                                },
+                                "sudo yum update -y\n",
+                                "sudo yum install -y awslogs httpd\n",
+                                "sudo systemctl start httpd\n",
+                                "sudo chkconfig httpd on\n",
+                                "sudo systemctl enable httpd\n",
+                                {
+                                    "Fn::Sub": "echo Hello World from ${WebServer2HostName} > /var/www/html/index.html\n"
+                                },
+                                "# Add apache logs to cloudwatch\n",
+                                "cat << 'EOF' >> /etc/awslogs/awslogs.conf\n\n",
+                                "[apache logs]\n",
+                                "datetime_format = %b %d %H:%M:%S\n",
+                                "file = /var/log/httpd/access_log\n",
+                                "buffer_duration = 5000\n",
+                                {
+                                    "Fn::Sub": "log_stream_name = ${WebServer2HostName}\n"
+                                },
+                                "initial_position = start_of_file\n",
+                                "log_group_name = apaches_logs\n",
+                                "EOF\n",
+                                "sudo systemctl start awslogsd\n",
+                                "sudo chkconfig awslogsd on\n",
+                                "sudo systemctl enable awslogsd.service\n",
+                                "sudo curl localhost\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    },         
+        "Outputs": {
+            "WEBSERVER1": {
+                "Description": "The ID of Webserver 1",
+                "Value": {
+                    "Ref": "WebServer1"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-WEBSERVER1"
+                    }
+                }
+            },
+            "WEBSERVER2": {
+                "Description": "The ID of Webserver 2",
+                "Value": {
+                    "Ref": "WebServer2"
+                },
+                "Export": {
+                    "Name": {
+                        "Fn::Sub": "${AWS::StackName}-WEBSERVER2"
+                }
+            }
+        }
+    }
+}
