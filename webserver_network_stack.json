@@ -4,9 +4,10 @@
     "Parameters": {
         "EnvironmentName": {
             "Type": "String",
-            "Description": "The identifier of the environment for naming resource tags. Ex: Development/Production",
-            "MinLength": 3,
-            "MaxLength": 48
+            "Description": "The identifier of the environment for naming resource tags. Ex: dev/prod",
+            "Default": "dev",
+            "AllowedValues": ["dev", "prod"],
+            "ConstraintDescription": "must be dev or prod"
         },
         "AvailabilityZoneA":{
             "Description":"The A availability zone where the resources will be deployed",

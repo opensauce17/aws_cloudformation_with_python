@@ -10,7 +10,7 @@
     "Parameters": {
         "EnvironmentName": {
             "Type": "String",
-            "Description": "The identifier of the environment for naming resource tags. Ex: Development/Production",
+            "Description": "The identifier of the environment for naming resource tags. Ex: dev/prod",
             "Default": "dev",
             "AllowedValues": ["dev", "prod"],
             "ConstraintDescription": "must be dev or prod"
