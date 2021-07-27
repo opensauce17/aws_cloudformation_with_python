@@ -131,11 +131,6 @@
                         "Fn::Sub": "${RoleName}"
                     }
                 ]
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "5b767018-2f81-48a4-939a-9892b4de5f9a"
-                }
             }
         },
         "WebServer1": {
@@ -231,11 +226,6 @@
                             ]
                         ]
                     }
-                }
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "7b2052b9-a661-422c-ada4-7d4941793e4d"
                 }
             }
         },
@@ -489,14 +479,27 @@
                 "AvailabilityZone":{
                    "Ref":"AvailabilityZoneA"
                 },
-                "VPCSecurityGroups":{
+                "VPCSecurityGroups":[{
                    "Fn::ImportValue": {
                    "Fn::Sub": "${NetWorkStackName}-BKENDTIER"
                     }
-                }
+                }],
+                "DBSubnetGroupName": { "Ref": "DBSubnetGroup" }
         }
-      }
-    },
+      },
+    "DBSubnetGroup" : {
+        "Type" : "AWS::RDS::DBSubnetGroup",
+        "Properties" : {
+            "DBSubnetGroupDescription" : "The DB subnet group for the RDS instance",
+            "SubnetIds" : [{
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetWorkStackName}-PUBSUBA"}},
+                   {"Fn::ImportValue": {
+                        "Fn::Sub": "${NetWorkStackName}-PUBSUBB"}}
+        ]
+     }
+   }
+ },
     "Outputs": {
         "WEBSERVER1": {
             "Description": "The ID of Webserver 1",
@@ -560,4 +563,3 @@
         }
     }
   }
-
