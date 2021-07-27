@@ -485,9 +485,17 @@
                 },
                 "MasterUserPassword": {
                     "Ref": "DBPassword"
+                },
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneA"
+                },
+                "VPCSecurityGroups":{
+                   "Fn::ImportValue": {
+                   "Fn::Sub": "${NetWorkStackName}-BKENDTIER"
+                    }
                 }
-            }
         }
+      }
     },
     "Outputs": {
         "WEBSERVER1": {
@@ -552,3 +560,4 @@
         }
     }
   }
+
