@@ -7,7 +7,16 @@
             "Description": "The identifier of the environment (dev or prod) for naming resource tags",
             "MinLength": 3,
             "MaxLength": 48
-        }
+     },
+        "AvailabilityZoneA":{
+            "Description":"The A availability zone where the resources will be deployed",
+            "Type":"AWS::EC2::AvailabilityZone::Name",
+            "ConstraintDescription":"Must be a valid availability zones. Ex: eu-west-1a"
+    },
+        "AvailabilityZoneB":{
+            "Description":"The B availability zones where the resources will be deployed",
+            "Type":"AWS::EC2::AvailabilityZone::Name",
+            "ConstraintDescription":"Must be a valid availability zones. Ex: eu-west-1a"
     },
     "Resources": {
         "VPC": {
@@ -29,6 +38,9 @@
         "PubSubneta": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
+                "AvailabilityZone":{  
+                   "Ref":"AvailabilityZoneA"
+                },    
                 "VpcId": {
                     "Ref": "VPC"
                 },
@@ -46,6 +58,9 @@
         "PubSubnetb": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneB"
+                },     
                 "VpcId": {
                     "Ref": "VPC"
                 },
@@ -63,6 +78,9 @@
         "PrivSubneta": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneA"
+                },    
                 "VpcId": {
                     "Ref": "VPC"
                 },
@@ -80,6 +98,9 @@
         "PrivSubnetb": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneB"
+                },    
                 "VpcId": {
                     "Ref": "VPC"
                 },

@@ -16,6 +16,16 @@
             "Type": "String",
             "Description": "The name of the role assigned to the EC2 instance for Session Manager and Cloudwatch access"
         },
+        "AvailabilityZoneA":{
+            "Description":"The A availability zone where the resources will be deployed",
+            "Type":"AWS::EC2::AvailabilityZone::Name",
+            "ConstraintDescription":"Must be a valid availability zones. Ex: eu-west-1a"
+        },
+        "AvailabilityZoneB":{
+            "Description":"The B availability zones where the resources will be deployed",
+            "Type":"AWS::EC2::AvailabilityZone::Name",
+            "ConstraintDescription":"Must be a valid availability zones. Ex: eu-west-1a"
+        },
         "WebServer1HostName": {
             "Type": "String",
             "Description": "The hostname identifier of the First Web Server"
@@ -46,6 +56,9 @@
         "WebServer1": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneA"
+                },
                 "IamInstanceProfile": {
                     "Ref": "InstanceProfile"
                 },
@@ -125,6 +138,9 @@
         "WebServer2": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
+                "AvailabilityZone":{
+                   "Ref":"AvailabilityZoneB"
+                },
                 "IamInstanceProfile": {
                     "Ref": "InstanceProfile"
                 },
