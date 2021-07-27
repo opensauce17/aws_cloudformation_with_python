@@ -208,7 +208,7 @@
                    },
                    {
                         "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                        "Fn::Sub": "${VPCStackName}-PUBSUBB"
                         }
                    }
                 ],
