@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description" : "Compute Stack",
+    "Description": "Compute Stack",
     "Parameters": {
         "EnvironmentName": {
             "Type": "String",
@@ -8,15 +8,15 @@
             "MinLength": 3,
             "MaxLength": 48
         },
-        "VPCStackName":{
-            "Type":"String",
+        "VPCStackName": {
+            "Type": "String",
             "Description": "The name of the related VPC Stack"
         },
         "RoleName": {
-            "Type":"String",
+            "Type": "String",
             "Description": "The name of the role assigned to the EC2 instance for Session Manager and Cloudwatch access"
         },
-	    "WebServer1HostName": {
+        "WebServer1HostName": {
             "Type": "String",
             "Description": "The hostname identifier of the First Web Server"
         },
@@ -26,7 +26,7 @@
         }
     },
     "Resources": {
-         "InstanceProfile": {
+        "InstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "InstanceProfileName": "SSM-Instance-Profile",
@@ -36,9 +36,14 @@
                         "Fn::Sub": "${RoleName}"
                     }
                 ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "5b767018-2f81-48a4-939a-9892b4de5f9a"
+                }
             }
         },
-     	 "WebServer1": {
+        "WebServer1": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
                 "IamInstanceProfile": {
@@ -57,7 +62,7 @@
                 "NetworkInterfaces": [
                     {
                         "GroupSet": [
-			               {
+                            {
                                 "Fn::ImportValue": {
                                     "Fn::Sub": "${VPCStackName}-WEBTIERSG"
                                 }
@@ -67,7 +72,7 @@
                         "DeviceIndex": "0",
                         "DeleteOnTermination": "true",
                         "SubnetId": {
-			  "Fn::ImportValue": {
+                            "Fn::ImportValue": {
                                 "Fn::Sub": "${VPCStackName}-PUBSUBA"
                             }
                         }
@@ -110,6 +115,11 @@
                         ]
                     }
                 }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "7b2052b9-a661-422c-ada4-7d4941793e4d"
+                }
             }
         },
         "WebServer2": {
@@ -131,7 +141,7 @@
                 "NetworkInterfaces": [
                     {
                         "GroupSet": [
-			                {
+                            {
                                 "Fn::ImportValue": {
                                     "Fn::Sub": "${VPCStackName}-WEBTIERSG"
                                 }
@@ -141,7 +151,7 @@
                         "DeviceIndex": "0",
                         "DeleteOnTermination": "true",
                         "SubnetId": {
-			   "Fn::ImportValue": {
+                            "Fn::ImportValue": {
                                 "Fn::Sub": "${VPCStackName}-PUBSUBB"
                             }
                         }
@@ -185,30 +195,155 @@
                     }
                 }
             }
-        }
-    },         
-        "Outputs": {
-            "WEBSERVER1": {
-                "Description": "The ID of Webserver 1",
-                "Value": {
-                    "Ref": "WebServer1"
-                },
-                "Export": {
-                    "Name": {
-                        "Fn::Sub": "${AWS::StackName}-WEBSERVER1"
+        },
+        "AppLb": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "Scheme":"internet-facing",
+                "Subnets":[
+                   {
+                        "Fn::ImportValue": {
+                        "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                         }
+                   },
+                   {
+                        "Fn::ImportValue": {
+                        "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                        }
+                   }
+                ],
+                "LoadBalancerAttributes":[
+                  {
+                    "Key":"idle_timeout.timeout_seconds",
+                    "Value":"50"
+                  }
+                ],
+                "SecurityGroups":[
+                    {
+                         "Fn::ImportValue": {
+                         "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                        }
                     }
-                }
-            },
-            "WEBSERVER2": {
-                "Description": "The ID of Webserver 2",
-                "Value": {
-                    "Ref": "WebServer2"
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-ALB"
+                        }
+                    }
+                ]
+            }
+        },
+        "HTTP80Listener":{  
+            "Type":"AWS::ElasticLoadBalancingV2::Listener",
+            "Properties":{
+                "DefaultActions":[
+                  {
+                    "Type":"forward",
+                    "TargetGroupArn":{
+                      "Ref":"LbTg"
+                    }
+                  }
+                ],
+                "LoadBalancerArn":{
+                  "Ref":"AppLb"
                 },
-                "Export": {
-                    "Name": {
-                        "Fn::Sub": "${AWS::StackName}-WEBSERVER2"
+                "Port":"80",
+                "Protocol":"HTTP"
+              }
+            },
+        "AppTg":{  
+            "Type":"AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties":{  
+                "Name":"AppTg",
+                "Port":80,
+                "Protocol":"HTTP",
+                "TargetGroupAttributes":[  
+                {  
+                    "Key":"deregistration_delay.timeout_seconds",
+                    "Value":"20"
+                }
+                ],
+                "VpcId": {
+                        "Fn::ImportValue": {
+                        "Fn::Sub": "${VPCStackName}-VPCID"
+                    }
+                },
+                "Targets":[  
+                {  
+                    "Id":{  
+                    "Ref":"WebServer1"
+                    },
+                    "Port":80
+                },
+                {  
+                    "Id":{  
+                    "Ref":"WebServer2"
+                    },
+                    "Port":80
+                }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${EnvironmentName}-WebTg"
+                        }
+                    }
+                ]
+            }
+        }   
+    },
+    "Outputs": {
+        "WEBSERVER1": {
+            "Description": "The ID of Webserver 1",
+            "Value": {
+                "Ref": "WebServer1"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-WEBSERVER1"
                 }
             }
+        },
+        "WEBSERVER2": {
+            "Description": "The ID of Webserver 2",
+            "Value": {
+                "Ref": "WebServer2"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-WEBSERVER2"
+                }
+            }
+        },
+        "WEB1PUBLICIP":{
+            "Description":"PublicIp of WebServer1",
+            "Value":{  
+                "Fn::GetAtt":[  
+                "WebServer1",
+                "PublicIp"
+            ]
         }
+    },
+        "WEB2PUBLICIP":{
+            "Description":"PublicIp of WebServer2",    
+            "Value":{  
+                "Fn::GetAtt":[  
+                "WebServer2",
+                "PublicIp"
+            ]
+        }
+    },
+        "APPLBDNSNAME":{  
+            "Description":"DNSName of the Application Load Balancer",
+            "Value":{  
+                "Fn::GetAtt":[  
+                    "AppLb",
+                    "DNSName"
+        ]
+      }
     }
+  }
 }
