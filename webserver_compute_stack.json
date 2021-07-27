@@ -161,7 +161,8 @@
                             "c1.xlarge",
                             {"Fn::If" : [
                             "CreateDevResources",
-                             "t2.micro"
+                             "t2.micro",
+                             ""
                   ]}
                 ]},
                 "ImageId": {
@@ -261,7 +262,8 @@
                             "c1.xlarge",
                             {"Fn::If" : [
                             "CreateDevResources",
-                             "t2.micro"
+                             "t2.micro",
+                             ""
                   ]}
                 ]},
                 "ImageId": {
@@ -272,7 +274,7 @@
                                 {"Ref": "AWS::Region"},
                                 "HVM64"
                         ]},
-                        {"Ref": "AMI"}
+                        {"Ref": "EC2AMI"}
                     ]
                 },
                 "NetworkInterfaces": [
@@ -467,8 +469,12 @@
                             "db.m5.large",
                             {"Fn::If" : [
                             "CreateDevResources",
-                             "db.t2.micro"]}
-                ]}]},
+                             "db.t2.micro",
+                             ""
+                        ]}
+                ]},
+                ""
+            ]},
                 "AllocatedStorage": {
                     "Ref": "DBAllocatedStorage"
                 },
@@ -546,4 +552,3 @@
         }
     }
   }
-
