@@ -212,12 +212,6 @@
                         }
                    }
                 ],
-                "LoadBalancerAttributes":[
-                  {
-                    "Key":"idle_timeout.timeout_seconds",
-                    "Value":"50"
-                  }
-                ],
                 "SecurityGroups":[
                     {
                          "Fn::ImportValue": {
@@ -253,6 +247,31 @@
                 "Protocol":"HTTP"
               }
             },
+       "ListenerRule":{  
+            "Type":"AWS::ElasticLoadBalancingV2::ListenerRule",
+            "Properties":{  
+                "Actions":[  
+                {  
+                    "Type":"forward",
+                    "TargetGroupArn":{  
+                    "Ref":"LbTg"
+                    }
+                }
+            ],
+            "Conditions":[  
+                {  
+                    "Field":"path-pattern",
+                    "Values":[  
+                    "*"
+                    ]
+                }
+            ],
+        "ListenerArn":{  
+          "Ref":"HTTP80Listener"
+        },
+        "Priority":1
+      }
+    },    
         "LbTg":{  
             "Type":"AWS::ElasticLoadBalancingV2::TargetGroup",
             "Properties":{  
