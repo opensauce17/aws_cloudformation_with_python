@@ -14,9 +14,9 @@
             "MinLength": 3,
             "MaxLength": 48
         },
-        "VPCStackName": {
+        "NetWorkStackName": {
             "Type": "String",
-            "Description": "The name of the related VPC Stack"
+            "Description": "The name of the related VPC and networking Stack"
         },
         "RoleName": {
             "Type": "String",
