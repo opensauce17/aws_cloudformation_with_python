@@ -107,7 +107,7 @@
                         "GroupSet": [
                             {
                                 "Fn::ImportValue": {
-                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                                    "Fn::Sub": "${NetWorkStackName}-WEBTIERSG"
                                 }
                             }
                         ],
@@ -116,7 +116,7 @@
                         "DeleteOnTermination": "true",
                         "SubnetId": {
                             "Fn::ImportValue": {
-                                "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                                "Fn::Sub": "${NetWorkStackName}-PUBSUBA"
                             }
                         }
                     }
@@ -199,7 +199,7 @@
                         "GroupSet": [
                             {
                                 "Fn::ImportValue": {
-                                    "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                                    "Fn::Sub": "${NetWorkStackName}-WEBTIERSG"
                                 }
                             }
                         ],
@@ -208,7 +208,7 @@
                         "DeleteOnTermination": "true",
                         "SubnetId": {
                             "Fn::ImportValue": {
-                                "Fn::Sub": "${VPCStackName}-PUBSUBB"
+                                "Fn::Sub": "${NetWorkStackName}-PUBSUBB"
                             }
                         }
                     }
@@ -259,19 +259,19 @@
                 "Subnets":[
                    {
                         "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-PUBSUBA"
+                        "Fn::Sub": "${NetWorkStackName}-PUBSUBA"
                          }
                    },
                    {
                         "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-PUBSUBB"
+                        "Fn::Sub": "${NetWorkStackName}-PUBSUBB"
                         }
                    }
                 ],
                 "SecurityGroups":[
                     {
                          "Fn::ImportValue": {
-                         "Fn::Sub": "${VPCStackName}-WEBTIERSG"
+                         "Fn::Sub": "${NetWorkStackName}-WEBTIERSG"
                         }
                     }
                 ],
@@ -342,7 +342,7 @@
                 ],
                 "VpcId": {
                         "Fn::ImportValue": {
-                        "Fn::Sub": "${VPCStackName}-VPCID"
+                        "Fn::Sub": "${NetWorkStackName}-VPCID"
                     }
                 },
                 "Targets":[  
@@ -422,4 +422,3 @@
     }
   }
 }
-
