@@ -11,8 +11,9 @@
         "EnvironmentName": {
             "Type": "String",
             "Description": "The identifier of the environment for naming resource tags. Ex: Development/Production",
-            "MinLength": 3,
-            "MaxLength": 48
+            "Default": "dev",
+            "AllowedValues": ["dev", "prod"],
+            "ConstraintDescription": "must be dev or prod"
         },
         "NetWorkStackName": {
             "Type": "String",
@@ -40,19 +41,83 @@
             "Type": "String",
             "Description": "The hostname identifier of the Second Web Server"
         },
-        "AMI": {
-            "Description": "AMI to use.",
+        "EC2AMI": {
+            "Description": "AMI to use for EC2 instances. Leave blank to use template region mapping",
             "AllowedPattern": "(ami-[0-9a-f]{8}){0,1}",
             "Default": "",
             "Type": "String"
+        },
+         "DBInstanceID": {
+            "Default": "WebServerRDS",
+            "Description": "The RDS instance for the Web Server infrascruture",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "63",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must begin with a letter and must not end with a hyphen or contain two consecutive hyphens."
+        },
+        "DBName": {
+            "Default": "rds",
+            "Description": "The Database name for the Web Server infrascruture",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBInstanceClass": {
+            "Default": "",
+            "Description": "DB instance class",
+            "Type": "String",
+            "ConstraintDescription": "Must select a valid DB instance type."
+        },
+        "DBAllocatedStorage": {
+            "Default": "50",
+            "Description": "The size of the database (GiB)",
+            "Type": "Number",
+            "MinValue": "20",
+            "MaxValue": "65536",
+            "ConstraintDescription": "must be between 20 and 65536 GiB."
+        },
+        "DBUsername": {
+            "NoEcho": "true",
+            "Description": "Username for MySQL database access",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "16",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+
+        "DBPassword": {
+            "NoEcho": "true",
+            "Description": "Password MySQL database access",
+            "Type": "String",
+            "MinLength": "8",
+            "MaxLength": "41",
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "ConstraintDescription": "must contain only alphanumeric characters."
         }
     },
      "Conditions": {
         "UseDefaultAMI": {
             "Fn::Equals": [
-                {"Ref": "AMI"},
+                {"Ref": "EC2AMI"},
                 ""
             ]
+        },
+        "UseDefaultDBInstanceClass": {
+            "Fn::Equals": [
+                {"Ref": "DBInstanceClass"},
+                ""
+            ]
+        },
+        "CreateProdResources" : {
+            "Fn::Equals" : [
+                    {"Ref" : "EnvironmentName"}, "prod"]
+        },
+        "CreateDevResources" : {
+            "Fn::Equals" : [{"Ref" : "EnvironmentName"}, "dev"]
         }
     },
     "Resources": {
@@ -90,7 +155,15 @@
                         }
                     }
                 ],
-                "InstanceType": "t2.micro",
+                "InstanceType": { 
+                        "Fn::If" : [
+                            "CreateProdResources",
+                            "c1.xlarge",
+                            {"Fn::If" : [
+                            "CreateDevResources",
+                             "t2.micro"
+                  ]}
+                ]},
                 "ImageId": {
                     "Fn::If": [
                         "UseDefaultAMI",
@@ -99,7 +172,7 @@
                                 {"Ref": "AWS::Region"},
                                 "HVM64"
                         ]},
-                        {"Ref": "AMI"}
+                        {"Ref": "EC2AMI"}
                     ]
                 },
                 "NetworkInterfaces": [
@@ -182,7 +255,15 @@
                         }
                     }
                 ],
-                "InstanceType": "t2.micro",
+                "InstanceType":{
+                        "Fn::If" : [
+                            "CreateProdResources",
+                            "c1.xlarge",
+                            {"Fn::If" : [
+                            "CreateDevResources",
+                             "t2.micro"
+                  ]}
+                ]},
                 "ImageId": {
                     "Fn::If": [
                         "UseDefaultAMI",
@@ -368,7 +449,39 @@
                     }
                 ]
             }
-        }   
+        },
+        "RDSInstance": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "DBInstanceIdentifier": {
+                    "Ref": "DBInstanceID"
+                },
+                "DBName": {
+                    "Ref": "DBName"
+                },
+                "DBInstanceClass": {
+                    "Fn::If": [
+                        "UseDefaultDBInstanceClass",
+                        {"Fn::If" : [ 
+                            "CreateProdResources",
+                            "db.m5.large",
+                            {"Fn::If" : [
+                            "CreateDevResources",
+                             "db.t2.micro"]}
+                ]}]},
+                "AllocatedStorage": {
+                    "Ref": "DBAllocatedStorage"
+                },
+                "Engine": "MySQL",
+                "EngineVersion": "8.0.16",
+                "MasterUsername": {
+                    "Ref": "DBUsername"
+                },
+                "MasterUserPassword": {
+                    "Ref": "DBPassword"
+                }
+            }
+        }
     },
     "Outputs": {
         "WEBSERVER1": {
@@ -419,8 +532,18 @@
                     "DNSName"
         ]
       }
+    },
+       "RDSINSTANCE": {
+            "Description":"The ID of the RDS instance",
+            "Value":{
+               "Ref": "RDSInstance"     
+           },
+           "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-RDSINSTANCE"
+                }
+            }
+        }
     }
   }
-}
-
 
