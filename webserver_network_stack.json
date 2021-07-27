@@ -382,8 +382,8 @@
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": 80,
-                        "ToPort": 80,
+                        "FromPort": 3306,
+                        "ToPort": 3306,
                         "SourceSecurityGroupId": {
                             "Fn::GetAtt": [
                                 "WebTierSG",
