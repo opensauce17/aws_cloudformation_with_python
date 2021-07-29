@@ -493,9 +493,9 @@
             "DBSubnetGroupDescription" : "The DB subnet group for the RDS instance",
             "SubnetIds" : [{
                     "Fn::ImportValue": {
-                        "Fn::Sub": "${NetWorkStackName}-PUBSUBA"}},
+                        "Fn::Sub": "${NetWorkStackName}-PRIVSUBA"}},
                    {"Fn::ImportValue": {
-                        "Fn::Sub": "${NetWorkStackName}-PUBSUBB"}}
+                        "Fn::Sub": "${NetWorkStackName}-PRIVSUBB"}}
         ]
      }
    }
